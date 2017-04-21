@@ -55,6 +55,7 @@ Load samples text files.
 sample_list = lapply(sample_table$file_name,function(file_name_fcs) {
   fcsB = read.FCS(file_name_fcs,transformation = FALSE)
   marker_names = colnames(fcsB)[str_detect(colnames(fcsB),"[0-9]{1}Di")]
+  marker_names = c(marker_names,"HLA-DR tot")
   marker_ids = which(colnames(fcsB) %in% marker_names)
   asinhT = arcsinhTransform(a = 0, b = 1/5, c = 0)
   transl = transformList(marker_names, asinhT)

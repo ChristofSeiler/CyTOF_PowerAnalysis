@@ -2,13 +2,12 @@
 
 #SBATCH --job-name=Classification
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-#SBATCH --mem-per-cpu=4GB
+#SBATCH --ntasks-per-node=1
+#SBATCH --mem-per-cpu=8GB
 #SBATCH --time=16:00:00
 #SBATCH --partition=normal
 
-# uncomment for cluster
-#module load R/3.3.0
+module load R/3.3.0
 
 treatment=CSW_plus_HIV_minus
 control=CSW_minus_HIV_minus
