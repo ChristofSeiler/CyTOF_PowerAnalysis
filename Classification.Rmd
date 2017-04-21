@@ -4,10 +4,11 @@ output: html_document
 author: Christof Seiler
 date: April, 2017
 params:
-  treatment: "US"
-  day: "d7_vs_d0"
+  treatment: "CSW_plus_HIV_plus_ART_plus"
+  control: "CSW_plus_HIV_plus_ART_minus"
   fdr: "0.01"
-  sample_file: "sample_table_nkcells.csv"
+  sample_file: "sample_table.csv"
+  marker_file: "markers.csv"
 ---
 
 ```{r setup, include=FALSE}
@@ -28,6 +29,7 @@ params
 
 ```{r load_packages}
 library(ggplot2)
+library(reshape2)
 library(magrittr)
 library(stringr)
 library(flowCore)
@@ -44,9 +46,6 @@ Load sample table.
 ```{r}
 sample_table = read.csv(params$sample_file)
 sample_table$file_name = as.character(sample_table$file_name)
-sample_table$donor = as.factor(sample_table$donor)
-sample_table$twin = as.factor(sample_table$twin)
-sample_table$batch = as.factor(sample_table$batch)
 head(sample_table)
 ```
 
@@ -69,19 +68,10 @@ sample_list = lapply(sample_table$file_name,function(file_name_fcs) {
 Compare two levels of one variable while conditioning on the other two experimental conditions.
 
 ```{r}
-response_id = which(str_detect(params,"_vs_"))
-response = names(params)[response_id]
-response
-contrast = str_split(params[response_id],"_vs_") %>% unlist
-contrast
-selection_id = which(names(params) != response & names(params) != "fdr" & names(params) != "sample_file")
-condition = params[selection_id]
-condition
-sample_table_class_ids = (sample_table[,response] == contrast[1] | sample_table[,response] == contrast[2]) &
-  sample_table[,names(condition)] == condition
-sample_table = sample_table[sample_table_class_ids,] %>% droplevels
-sample_table[,response] = factor(sample_table[,response],levels = rev(contrast))
-sample_list = sample_list[sample_table_class_ids]
+subset_ids = which(sample_table$group == params$treatment | sample_table$group == params$control)
+sample_table = sample_table[subset_ids,]
+sample_table = droplevels(sample_table)
+sample_list = sample_list[subset_ids]
 ```
 
 Logistic regression on all cells. Combine all samples into one data frame.
@@ -96,25 +86,49 @@ combine_samples = function(sample_id) {
 }
 df_samples = lapply(1:length(sample_list),combine_samples) %>%
   do.call(rbind,.)
-cell_count = table(df_samples$id)
+cell_count = table(df_samples$donor)
 df_cell_count = data.frame(cell_count)
-names(df_cell_count) = c("sample_id","cell_count")
-ggplot(data=df_cell_count, aes(x=sample_id, y=cell_count)) +
+names(df_cell_count) = c("donor","cell_count")
+ggplot(data=df_cell_count, aes(x=donor, y=cell_count)) +
   geom_bar(stat="identity") +
   theme(axis.text.x = element_text(angle=60, vjust=0.5))
+```
+
+Remove samples with less than 2500 cells.
+
+```{r}
+keepers = df_cell_count$donor[which(df_cell_count$cell_count > 2500)]
+length(keepers)
+df_samples = subset(df_samples,donor %in% keepers) %>% droplevels
+table(df_samples$donor)
 ```
 
 Change marker name from isotope name to protein name.
 
 ```{r}
-num_markers = ncol(df_samples)-ncol(sample_table)
-markers = read.csv("markers_subselection.csv",stringsAsFactors = FALSE)
+markers = read.csv(params$marker_file,stringsAsFactors = FALSE)
 markers$type = as.factor(markers$type)
 for(i in 1:length(markers$isotope)) {
   isotope_name = markers$isotope[i]
-  col_id = which(isotope_name==names(df_samples))
+  col_id = str_detect(string = names(df_samples),
+                      pattern = as.character(isotope_name)) %>% which
   names(df_samples)[col_id] = markers$protein_name[i]
 }
+```
+
+Visualize all proteins for one donor.
+
+```{r fig.height=9,fig.width=10}
+num_markers = ncol(df_samples)-ncol(sample_table)
+df_samples_subset = data.frame(df_samples[,1:num_markers],
+                               donor = df_samples$donor,
+                               group = df_samples$group)
+df_samples_subset_long = melt(df_samples_subset,id = c("donor","group"))
+ggplot(df_samples_subset_long, aes(x = value,y = ..scaled..,shape = donor,color = group)) + 
+  geom_density() + 
+  facet_wrap(~ variable,ncol = 8) +
+  xlab("arcsinh transformed counts") +
+  theme(legend.position = "bottom")
 ```
 
 Plotting function to visuzlize fixed effects.
@@ -141,10 +155,7 @@ plot_glm = function(res_glm) {
       geom_hline(yintercept = 0, col = "red") + 
       geom_point() + 
       geom_segment(mapping=aes(x=protein_name, y=low, xend=protein_name, yend=high)) + 
-      #theme(axis.text.x = element_text(angle = 70, hjust = 1)) +
-      ylab("coefficient") + 
-      xlab("marker") + 
-      labs(title = response_name) +
+      ylab("log-odds") + 
       theme(plot.title = element_text(hjust = 0.5)) +
       coord_flip()
   )
@@ -152,14 +163,14 @@ plot_glm = function(res_glm) {
 ```
 
 We use the package ``glm`` to setup a logistic regression model. The response variable are the log-odds and the explantory variables are markers. Log-odds are logarithm of ratios of two probabilites: the probabliliy that a cell is B (encoded as 1) over the probability that a cell is A (encoded as 0). This can be written mathematically as
-$$\log\left(\frac{P(\text{cell infected with B})}{P(\text{cell infected with A})}\right) = \beta_0 + \beta_{1} \times \text{BCKG190Di} + \dots + \beta_{48} \times \text{Yb176Di}.$$
+$$\log\left(\frac{P(\text{cell is treatment})}{P(\text{cell is control})}\right) = \beta_0 + \beta_{1} \times \text{BCKG190Di} + \dots + \beta_{48} \times \text{Yb176Di}.$$
 
 ```{r}
 fdr = as.numeric(params$fdr)
-contrasts(df_samples[,response])
+contrasts(df_samples$group)
 markers_str = paste0(markers$protein_name,collapse = " + ")
 # fixed effects only
-formula = as.formula( paste(response," ~ ",markers_str) )
+formula = as.formula( paste("group ~ ",markers_str) )
 formula
 res_glm = glm(formula,family = binomial(link='logit'), data = df_samples)
 pvalues = summary(res_glm)$coefficients[-1,4]
@@ -175,7 +186,7 @@ Generalized linear mixed effect model that accounts for the variablity at the su
 # mixed effects
 # formula not working, workaround use parse command
 formula_expr = parse(text = paste0("mhglm(",
-                              paste(response," ~",markers_str,"+",paste0("(",markers_str," | donor),")),
+                              paste("group ~",markers_str,"+",paste0("(",markers_str," | donor),")),
                               "family = binomial(link='logit'),",
                               "data = df_samples,",
                               "control = mhglm.control(parallel = TRUE,fit.method = 'firthglm.fit'))"))
@@ -209,7 +220,7 @@ Use information (condition, cell count, etc.) about each sample for annotation. 
 ```{r}
 subsample_ids = lapply(levels(df_samples$donor),function(donor_id) {
   all_ids = which(df_samples$donor == donor_id)
-  sample(x = all_ids,size = 500)
+  sample(x = all_ids,size = round(10000/length(levels(df_samples$donor))))
 }) %>% unlist
 #subsample_ids = sample(x = nrow(df_samples),
 #                       size = 10000,
@@ -223,31 +234,24 @@ screeplot(res_pca)
 PCA plots.
 
 ```{r fig.height=6,fig.width=8}
-plot_pca = function(variable) {
+plot_pca = function(var_name) {
+  var_explained = sapply(1:2,function(pc) 
+    round(100*res_pca$sdev[pc]^2/sum(res_pca$sdev^2),digits = 1))
   autoplot(res_pca, 
-           data = df_info,
-           colour = variable,
-           loadings = TRUE,
+           data = df_info, 
+           colour = var_name, 
+           loadings = TRUE, 
            loadings.label = TRUE,
            loadings.colour = "black",
            loadings.label.colour = "black",
-           alpha = 0.5)
+           loadings.label.repel = FALSE,
+           alpha = 0.5,
+           xlab = paste0("PC1 (",var_explained[1],"%)"),
+           ylab = paste0("PC2 (",var_explained[2],"%)"))
 }
-plot_pca("treatment")
-plot_pca("id")
+plot_pca("group")
 plot_pca("donor")
-plot_pca("day")
-plot_pca("twin_type")
-plot_pca("twin")
-plot_pca("batch")
-```
-
-Pair plots.
-
-```{r fig.height=9,fig.width=9}
-#df = data.frame(df_samples_subset,df_info)
-#ggscatmat(df, columns = 1:ncol(df_samples_subset), color = response,alpha = 0.5)
-#ggscatmat(df, columns = 1:ncol(df_samples_subset), color = 'donor',alpha = 0.5)
+plot_pca("date")
 ```
 
 ## Session Info

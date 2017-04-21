@@ -1,71 +1,71 @@
-id,group,donor,technique
-1,CSW-HIV-,HLA004,PBMCs
-2,CSW-HIV-,HLA005,enriched NK cells
-3,CSW-HIV-,HLA008,enriched NK cells
-4,CSW-HIV-,HLA026,enriched NK cells
-5,CSW-HIV-,HLA035,enriched NK cells
-6,CSW-HIV-,HLA036,enriched NK cells
-7,CSW-HIV-,HLA038,enriched NK cells
-8,CSW-HIV-,HLA045,enriched NK cells
-9,CSW-HIV-,HLA060,enriched NK cells
-10,CSW-HIV-,HLA067 ,enriched NK cells
-11,CSW+HIV+ART+,D001T,PBMCs
-12,CSW+HIV+ART+,D003T,PBMCs
-13,CSW+HIV+ART+,D010T,enriched NK cells
-14,CSW+HIV+ART+,D013T,enriched NK cells
-15,CSW+HIV+ART+,D014T,enriched NK cells
-16,CSW+HIV+ART+,D017T,enriched NK cells
-17,CSW+HIV+ART+,D025T,enriched NK cells
-18,CSW+HIV+ART+,D026T,enriched NK cells
-19,CSW+HIV+ART+,D027T,enriched NK cells
-20,CSW+HIV+ART+,D029T,enriched NK cells
-21,CSW+HIV+ART+,D035T,enriched NK cells
-22,CSW+HIV+ART+,D036T,enriched NK cells
-23,CSW+HIV+ART+,D040T,enriched NK cells
-24,CSW+HIV+ART+,D044T,enriched NK cells
-25,CSW+HIV+ART+,D045T,enriched NK cells
-26,CSW+HIV+ART+,D048T,enriched NK cells
-27,CSW+HIV+ART+,D049T,enriched NK cells
-28,CSW+HIV+ART+,D051T,enriched NK cells
-29,CSW+HIV+ART+,D052T,enriched NK cells
-30,CSW+HIV+ART+,D053T,enriched NK cells
-31,CSW+HIV+ART-,D304T,PBMCs
-32,CSW+HIV+ART-,D309T,PBMCs
-33,CSW+HIV+ART-,D315T,PBMCs
-34,CSW+HIV+ART-,D323T,enriched NK cells
-35,CSW+HIV+ART-,D324T,enriched NK cells
-36,CSW+HIV+ART-,D335T,enriched NK cells
-37,CSW+HIV+ART-,D338T,enriched NK cells
-38,CSW+HIV+ART-,D346T,enriched NK cells
-39,CSW+HIV+ART-,D353T,enriched NK cells
-40,CSW+HIV+ART-,D355T,enriched NK cells
-41,CSW+HIV+ART-,D359T,enriched NK cells
-42,CSW+HIV+ART-,D360T,enriched NK cells
-43,CSW+HIV+ART-,D362T,enriched NK cells
-44,CSW+HIV+ART-,D370T,enriched NK cells
-45,CSW+HIV+ART-,D372T,enriched NK cells
-46,CSW+HIV+ART-,D374T,enriched NK cells
-47,CSW+HIV+ART-,D379T,enriched NK cells
-48,CSW+HIV+ART-,D383T,enriched NK cells
-49,CSW+HIV+ART-,D386T,enriched NK cells
-50,CSW+HIV+ART-,D391T ,enriched NK cells
-51,CSW+HIV-,D617T,PBMCs
-52,CSW+HIV-,D622T,PBMCs
-53,CSW+HIV-,D627T,PBMCs
-54,CSW+HIV-,D647T,enriched NK cells
-55,CSW+HIV-,D648T,enriched NK cells
-56,CSW+HIV-,D653T,enriched NK cells
-57,CSW+HIV-,D660T,enriched NK cells
-58,CSW+HIV-,D688T,enriched NK cells
-59,CSW+HIV-,D709T,enriched NK cells
-60,CSW+HIV-,D712T,enriched NK cells
-61,CSW+HIV-,D714T,enriched NK cells
-62,CSW+HIV-,D717T,enriched NK cells
-63,CSW+HIV-,D752T,enriched NK cells
-64,CSW+HIV-,D755T,enriched NK cells
-65,CSW+HIV-,D787T,enriched NK cells
-66,CSW+HIV-,D789T,enriched NK cells
-67,CSW+HIV-,D794T,enriched NK cells
-68,CSW+HIV-,D795T,enriched NK cells
-69,CSW+HIV-,D802T,enriched NK cells
-70,CSW+HIV-,D824T,enriched NK cells
+id,group,donor,technique,file_name,date
+1,CSW_minus_HIV_minus,HLA004,PBMCs,HLA004_NK_00_normalized_NK RAINBOW_12-Dec-2016.fcs,12-Dec-16
+2,CSW_minus_HIV_minus,HLA005,enriched NK cells,HLA005_NK_26_normalized_NK RAINBOW_09-Feb-2017.fcs,9-Feb-17
+3,CSW_minus_HIV_minus,HLA008,enriched NK cells,HLA008_NK_01_normalized_NK RAINBOW_16-Feb-2017.fcs,16-Feb-17
+4,CSW_minus_HIV_minus,HLA026,enriched NK cells,HLA026_NK_00_normalized_NK RAINBOW_22-Feb-2017.fcs,22-Feb-17
+5,CSW_minus_HIV_minus,HLA035,enriched NK cells,HLA035_NK_06_normalized_NK RAINBOW_23-Feb-2017.fcs,23-Feb-17
+6,CSW_minus_HIV_minus,HLA036,enriched NK cells,HLA036_NK_04_normalized_NK RAINBOW_01-Mar-2017.fcs,1-Mar-17
+7,CSW_minus_HIV_minus,HLA038,enriched NK cells,HLA038_NK_00_normalized_NK RAINBOW_02-Mar-2017.fcs,2-Mar-17
+8,CSW_minus_HIV_minus,HLA045,enriched NK cells,HLA045_NK_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+9,CSW_minus_HIV_minus,HLA060,enriched NK cells,HLA060_NK__02_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+10,CSW_minus_HIV_minus,HLA067,enriched NK cells,HLA067_NK_00_normalized_NK RAINBOW_10-Mar-2017.fcs,10-Mar-17
+11,CSW_plus_HIV_plus_ART_plus,D001T,PBMCs,D001T_NK_00_normalized_NK RAINBOW_12-Dec-2016.fcs,12-Dec-16
+12,CSW_plus_HIV_plus_ART_plus,D003T,PBMCs,D003T_NK_normalized_NK RAINBOW_12-Dec-2016.fcs,12-Dec-16
+13,CSW_plus_HIV_plus_ART_plus,D010T,enriched NK cells,D010T_NK_26_normalized_NK RAINBOW_09-Feb-2017.fcs,9-Feb-17
+14,CSW_plus_HIV_plus_ART_plus,D013T,enriched NK cells,D013T_NK_27_normalized_NK RAINBOW_09-Feb-2017.fcs,9-Feb-17
+15,CSW_plus_HIV_plus_ART_plus,D014T,enriched NK cells,D014T_NK_01_normalized_NK RAINBOW_16-Feb-2017.fcs,16-Feb-17
+16,CSW_plus_HIV_plus_ART_plus,D017T,enriched NK cells,D017T_NK_01_normalized_NK RAINBOW_16-Feb-2017.fcs,16-Feb-17
+17,CSW_plus_HIV_plus_ART_plus,D025T,enriched NK cells,D025T_NK_00_normalized_NK RAINBOW_22-Feb-2017.fcs,22-Feb-17
+18,CSW_plus_HIV_plus_ART_plus,D026T,enriched NK cells,D026T_NK_00_normalized_NK RAINBOW_22-Feb-2017.fcs,22-Feb-17
+19,CSW_plus_HIV_plus_ART_plus,D027T,enriched NK cells,D027T_NK_06_normalized_NK RAINBOW_23-Feb-2017.fcs,23-Feb-17
+20,CSW_plus_HIV_plus_ART_plus,D029T,enriched NK cells,D029T_NK_06_normalized_NK RAINBOW_23-Feb-2017.fcs,23-Feb-17
+21,CSW_plus_HIV_plus_ART_plus,D035T,enriched NK cells,D035T_NK_04_normalized_NK RAINBOW_01-Mar-2017.fcs,1-Mar-17
+22,CSW_plus_HIV_plus_ART_plus,D036T,enriched NK cells,D036T_NK_05_normalized_NK RAINBOW_01-Mar-2017.fcs,1-Mar-17
+23,CSW_plus_HIV_plus_ART_plus,D040T,enriched NK cells,D040T_NK_00_normalized_NK RAINBOW_02-Mar-2017.fcs,2-Mar-17
+24,CSW_plus_HIV_plus_ART_plus,D044T,enriched NK cells,D044T_NK_00_normalized_NK RAINBOW_02-Mar-2017.fcs,2-Mar-17
+25,CSW_plus_HIV_plus_ART_plus,D045T,enriched NK cells,D045T_NK_00_normalized_NK RAINBOW_02-Mar-2017.fcs,2-Mar-17
+26,CSW_plus_HIV_plus_ART_plus,D048T,enriched NK cells,D048T_NK_02_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+27,CSW_plus_HIV_plus_ART_plus,D049T,enriched NK cells,D049T_NK_02_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+28,CSW_plus_HIV_plus_ART_plus,D051T,enriched NK cells,D051T_NK_00_normalized_NK RAINBOW_10-Mar-2017.fcs,10-Mar-17
+29,CSW_plus_HIV_plus_ART_plus,D052T,enriched NK cells,D052T_NK_00_normalized_NK RAINBOW_10-Mar-2017.fcs,10-Mar-17
+30,CSW_plus_HIV_plus_ART_plus,D053T,enriched NK cells,D053T_NK_00_normalized_NK RAINBOW_10-Mar-2017.fcs,10-Mar-17
+31,CSW_plus_HIV_plus_ART_minus,D304T,PBMCs,D304T_NK_00_normalized_NK RAINBOW_05-Dec-2016.fcs,5-Dec-16
+32,CSW_plus_HIV_plus_ART_minus,D309T,PBMCs,D309T_NK_00_normalized_NK RAINBOW_12-Dec-2016.fcs,12-Dec-16
+33,CSW_plus_HIV_plus_ART_minus,D315T,PBMCs,D315T_NK_00_normalized_NK RAINBOW_12-Dec-2016.fcs,12-Dec-16
+34,CSW_plus_HIV_plus_ART_minus,D323T,enriched NK cells,D323T_NK_28_normalized_NK RAINBOW_09-Feb-2017.fcs,9-Feb-17
+35,CSW_plus_HIV_plus_ART_minus,D324T,enriched NK cells,D324T_NK_29_normalized_NK RAINBOW_09-Feb-2017.fcs,9-Feb-17
+36,CSW_plus_HIV_plus_ART_minus,D335T,enriched NK cells,D335T_NK_02_normalized_NK RAINBOW_16-Feb-2017.fcs,16-Feb-17
+37,CSW_plus_HIV_plus_ART_minus,D338T,enriched NK cells,D338T_NK_02_normalized_NK RAINBOW_16-Feb-2017.fcs,16-Feb-17
+38,CSW_plus_HIV_plus_ART_minus,D346T,enriched NK cells,D346T_NK_01_normalized_NK RAINBOW_22-Feb-2017.fcs,22-Feb-17
+39,CSW_plus_HIV_plus_ART_minus,D353T,enriched NK cells,D353T_NK_02_normalized_NK RAINBOW_22-Feb-2017.fcs,22-Feb-17
+40,CSW_plus_HIV_plus_ART_minus,D355T,enriched NK cells,D355T_NK_07_normalized_NK RAINBOW_23-Feb-2017.fcs,23-Feb-17
+41,CSW_plus_HIV_plus_ART_minus,D359T,enriched NK cells,D359T_NK_08_normalized_NK RAINBOW_23-Feb-2017.fcs,23-Feb-17
+42,CSW_plus_HIV_plus_ART_minus,D360T,enriched NK cells,D360T_NK_06_normalized_NK RAINBOW_01-Mar-2017.fcs,1-Mar-17
+43,CSW_plus_HIV_plus_ART_minus,D362T,enriched NK cells,D362T_NK_normalized_NK RAINBOW_01-Mar-2017.fcs,1-Mar-17
+44,CSW_plus_HIV_plus_ART_minus,D370T,enriched NK cells,D370T_NK_00_normalized_NK RAINBOW_02-Mar-2017.fcs,2-Mar-17
+45,CSW_plus_HIV_plus_ART_minus,D372T,enriched NK cells,D372T_NK_00_normalized_NK RAINBOW_02-Mar-2017.fcs,2-Mar-17
+46,CSW_plus_HIV_plus_ART_minus,D374T,enriched NK cells,D374T_NK_02_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+47,CSW_plus_HIV_plus_ART_minus,D379T,enriched NK cells,D379T_NK_02_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+48,CSW_plus_HIV_plus_ART_minus,D383T,enriched NK cells,D383T_NK_00_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+49,CSW_plus_HIV_plus_ART_minus,D386T,enriched NK cells,D386T_NK_00_normalized_NK RAINBOW_10-Mar-2017.fcs,10-Mar-17
+50,CSW_plus_HIV_plus_ART_minus,D391T,enriched NK cells,D391T_NK_00_normalized_NK RAINBOW_10-Mar-2017.fcs,10-Mar-17
+51,CSW_plus_HIV_minus,D617T,PBMCs,D617T_NK_00_normalized_NK RAINBOW_05-Dec-2016.fcs,5-Dec-16
+52,CSW_plus_HIV_minus,D622T,PBMCs,D622T_NK_00_normalized_NK RAINBOW_12-Dec-2016.fcs,12-Dec-16
+53,CSW_plus_HIV_minus,D627T,PBMCs,D627T_NK_00_normalized_NK RAINBOW_12-Dec-2016.fcs,12-Dec-16
+54,CSW_plus_HIV_minus,D647T,enriched NK cells,D647T_NK_00_normalized_NK RAINBOW_09-Feb-2017.fcs,9-Feb-17
+55,CSW_plus_HIV_minus,D648T,enriched NK cells,D648T_NK_00_normalized_NK RAINBOW_09-Feb-2017.fcs,9-Feb-17
+56,CSW_plus_HIV_minus,D653T,enriched NK cells,D653T_NK_02_normalized_NK RAINBOW_16-Feb-2017.fcs,16-Feb-17
+57,CSW_plus_HIV_minus,D660T,enriched NK cells,D660T_NK_02_normalized_NK RAINBOW_16-Feb-2017.fcs,16-Feb-17
+58,CSW_plus_HIV_minus,D688T,enriched NK cells,D688T_NK_03_normalized_NK RAINBOW_22-Feb-2017.fcs,22-Feb-17
+59,CSW_plus_HIV_minus,D709T,enriched NK cells,D709T_NK_03_normalized_NK RAINBOW_22-Feb-2017.fcs,22-Feb-17
+60,CSW_plus_HIV_minus,D712T,enriched NK cells,D712T_NK_08_normalized_NK RAINBOW_23-Feb-2017.fcs,23-Feb-17
+61,CSW_plus_HIV_minus,D714T,enriched NK cells,D714T_NK_08_normalized_NK RAINBOW_23-Feb-2017.fcs,23-Feb-17
+62,CSW_plus_HIV_minus,D717T,enriched NK cells,D717T_NK_00_normalized_NK RAINBOW_01-Mar-2017.fcs,1-Mar-17
+63,CSW_plus_HIV_minus,D752T,enriched NK cells,D752T_NK_00_normalized_NK RAINBOW_01-Mar-2017.fcs,1-Mar-17
+64,CSW_plus_HIV_minus,D755T,enriched NK cells,D755T_NK_00_normalized_NK RAINBOW_01-Mar-2017.fcs,1-Mar-17
+65,CSW_plus_HIV_minus,D787T,enriched NK cells,D787T_NK_00_normalized_NK RAINBOW_02-Mar-2017.fcs,2-Mar-17
+66,CSW_plus_HIV_minus,D789T,enriched NK cells,D789T_NK_01_normalized_NK RAINBOW_02-Mar-2017.fcs,2-Mar-17
+67,CSW_plus_HIV_minus,D794T,enriched NK cells,D794T_NK_01_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+68,CSW_plus_HIV_minus,D795T,enriched NK cells,D795T_NK_01_normalized_NK RAINBOW_09-Mar-2017.fcs,9-Mar-17
+69,CSW_plus_HIV_minus,D802T,enriched NK cells,D802T_NK_00_normalized_NK RAINBOW_10-Mar-2017.fcs,10-Mar-17
+70,CSW_plus_HIV_minus,D824T,enriched NK cells,D824T_NK_01_normalized_NK RAINBOW_10-Mar-2017.fcs,10-Mar-17
