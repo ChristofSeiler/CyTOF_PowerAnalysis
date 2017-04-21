@@ -1,0 +1,257 @@
+---
+title: "Classification"
+output: html_document
+author: Christof Seiler
+date: April, 2017
+params:
+  treatment: "US"
+  day: "d7_vs_d0"
+  fdr: "0.01"
+  sample_file: "sample_table_nkcells.csv"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Goal
+
+We use logistic regression to predict different cells conditions from CyTOF markers.
+
+## Input Parameters
+
+```{r}
+params
+```
+
+## Load Packages
+
+```{r load_packages}
+library(ggplot2)
+library(magrittr)
+library(stringr)
+library(flowCore)
+library(mbest)
+library(ggfortify)
+library(GGally)
+theme_set(theme_bw())
+```
+
+## Load Data
+
+Load sample table.
+
+```{r}
+sample_table = read.csv(params$sample_file)
+sample_table$file_name = as.character(sample_table$file_name)
+sample_table$donor = as.factor(sample_table$donor)
+sample_table$twin = as.factor(sample_table$twin)
+sample_table$batch = as.factor(sample_table$batch)
+head(sample_table)
+```
+
+Load samples text files.
+
+```{r import}
+sample_list = lapply(sample_table$file_name,function(file_name_fcs) {
+  fcsB = read.FCS(file_name_fcs,transformation = FALSE)
+  marker_names = colnames(fcsB)[str_detect(colnames(fcsB),"[0-9]{1}Di")]
+  marker_ids = which(colnames(fcsB) %in% marker_names)
+  asinhT = arcsinhTransform(a = 0, b = 1/5, c = 0)
+  transl = transformList(marker_names, asinhT)
+  fcsBT = transform(fcsB[,marker_ids], transl)
+  fcsBT@exprs
+})
+```
+
+## Logistic Regression
+
+Compare two levels of one variable while conditioning on the other two experimental conditions.
+
+```{r}
+response_id = which(str_detect(params,"_vs_"))
+response = names(params)[response_id]
+response
+contrast = str_split(params[response_id],"_vs_") %>% unlist
+contrast
+selection_id = which(names(params) != response & names(params) != "fdr" & names(params) != "sample_file")
+condition = params[selection_id]
+condition
+sample_table_class_ids = (sample_table[,response] == contrast[1] | sample_table[,response] == contrast[2]) &
+  sample_table[,names(condition)] == condition
+sample_table = sample_table[sample_table_class_ids,] %>% droplevels
+sample_table[,response] = factor(sample_table[,response],levels = rev(contrast))
+sample_list = sample_list[sample_table_class_ids]
+```
+
+Logistic regression on all cells. Combine all samples into one data frame.
+
+```{r}
+combine_samples = function(sample_id) {
+  sample_info = sample_table[sample_id,]
+  cat(as.character(sample_info$file_name),"\n")
+  sample = sample_list[[sample_id]]
+  rownames(sample_info) = NULL
+  data.frame(sample,sample_info)
+}
+df_samples = lapply(1:length(sample_list),combine_samples) %>%
+  do.call(rbind,.)
+cell_count = table(df_samples$id)
+df_cell_count = data.frame(cell_count)
+names(df_cell_count) = c("sample_id","cell_count")
+ggplot(data=df_cell_count, aes(x=sample_id, y=cell_count)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle=60, vjust=0.5))
+```
+
+Change marker name from isotope name to protein name.
+
+```{r}
+num_markers = ncol(df_samples)-ncol(sample_table)
+markers = read.csv("markers_subselection.csv",stringsAsFactors = FALSE)
+markers$type = as.factor(markers$type)
+for(i in 1:length(markers$isotope)) {
+  isotope_name = markers$isotope[i]
+  col_id = which(isotope_name==names(df_samples))
+  names(df_samples)[col_id] = markers$protein_name[i]
+}
+```
+
+Plotting function to visuzlize fixed effects.
+
+```{r}
+plot_glm = function(res_glm) {
+  num_explanatory = nrow(summary(res_glm)$coefficient)-1
+  adj_alpha = 0.05/num_explanatory
+  ci = qnorm(1-adj_alpha/2)
+  coeff = summary(res_glm)$coefficient[2:nrow(summary(res_glm)$coefficient),]
+  # add protein name
+  coeff = data.frame(coeff,protein_name=rownames(coeff))
+  # sort according to z-value
+  coeff$protein_name = factor(coeff$protein_name, 
+                              levels = coeff$protein_name[order(abs(coeff$z.value),
+                                                                decreasing = FALSE)])
+  coeff = data.frame(coeff,
+    high=coeff$Estimate+ci*coeff$Std..Error,
+    low=coeff$Estimate-ci*coeff$Std..Error)
+  response_name = strsplit(as.character(summary(res_glm)$call[2]),
+                           split = "~") %>% unlist %>% .[1]
+  print(
+    ggplot(coeff, aes(x=protein_name, y=Estimate)) + 
+      geom_hline(yintercept = 0, col = "red") + 
+      geom_point() + 
+      geom_segment(mapping=aes(x=protein_name, y=low, xend=protein_name, yend=high)) + 
+      #theme(axis.text.x = element_text(angle = 70, hjust = 1)) +
+      ylab("coefficient") + 
+      xlab("marker") + 
+      labs(title = response_name) +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      coord_flip()
+  )
+}
+```
+
+We use the package ``glm`` to setup a logistic regression model. The response variable are the log-odds and the explantory variables are markers. Log-odds are logarithm of ratios of two probabilites: the probabliliy that a cell is B (encoded as 1) over the probability that a cell is A (encoded as 0). This can be written mathematically as
+$$\log\left(\frac{P(\text{cell infected with B})}{P(\text{cell infected with A})}\right) = \beta_0 + \beta_{1} \times \text{BCKG190Di} + \dots + \beta_{48} \times \text{Yb176Di}.$$
+
+```{r}
+fdr = as.numeric(params$fdr)
+contrasts(df_samples[,response])
+markers_str = paste0(markers$protein_name,collapse = " + ")
+# fixed effects only
+formula = as.formula( paste(response," ~ ",markers_str) )
+formula
+res_glm = glm(formula,family = binomial(link='logit'), data = df_samples)
+pvalues = summary(res_glm)$coefficients[-1,4]
+selected_marker_ids = which(p.adjust(pvalues,method = "BH") < fdr)
+pvalues_adj = pvalues[selected_marker_ids]
+pvalues_adj
+plot_glm(res_glm)
+```
+
+Generalized linear mixed effect model that accounts for the variablity at the subjects level. We are only interested in those markers that are significantly associated at the population level, i.e., the fixed effects part.
+
+```{r}
+# mixed effects
+# formula not working, workaround use parse command
+formula_expr = parse(text = paste0("mhglm(",
+                              paste(response," ~",markers_str,"+",paste0("(",markers_str," | donor),")),
+                              "family = binomial(link='logit'),",
+                              "data = df_samples,",
+                              "control = mhglm.control(parallel = TRUE,fit.method = 'firthglm.fit'))"))
+formula_expr
+res_mhglm = eval(formula_expr)
+# --- too slow
+#res_glm = glmer(formula,family = binomial(link='logit'), data = df_samples)
+# ---
+pvalues = summary(res_mhglm)$coefficients[-1,4]
+pvalues_adj = p.adjust(pvalues,method = "BH")
+results = data.frame(markers,pvalues,pvalues_adj)
+results[order(results$pvalues),]
+results_selected = subset(results,pvalues_adj < fdr)
+results_selected
+plot_glm(res_mhglm)
+```
+
+Markers with **positive coefficients** tell us that an increase in the associated marker **increases the log-odds**. Markers with **negative coefficients** tell us that an increase in the associated marker **decreases the log-odds**.
+
+## Visualization of Important Markers
+
+Only render if more than two markers are significant.
+
+```{r}
+column_ids = sapply(results_selected$protein_name,function(name) which(name == names(df_samples)))
+if(length(column_ids) < 2) knitr::knit_exit()
+```
+
+Use information (condition, cell count, etc.) about each sample for annotation. Prepare data.
+
+```{r}
+subsample_ids = lapply(levels(df_samples$donor),function(donor_id) {
+  all_ids = which(df_samples$donor == donor_id)
+  sample(x = all_ids,size = 500)
+}) %>% unlist
+#subsample_ids = sample(x = nrow(df_samples),
+#                       size = 10000,
+#                       replace = FALSE)
+df_samples_subset = df_samples[subsample_ids,column_ids]
+df_info = df_samples[subsample_ids,names(sample_table)]
+res_pca = prcomp(df_samples_subset,scale. = FALSE)
+screeplot(res_pca)
+```
+
+PCA plots.
+
+```{r fig.height=6,fig.width=8}
+plot_pca = function(variable) {
+  autoplot(res_pca, 
+           data = df_info,
+           colour = variable,
+           loadings = TRUE,
+           loadings.label = TRUE,
+           loadings.colour = "black",
+           loadings.label.colour = "black",
+           alpha = 0.5)
+}
+plot_pca("treatment")
+plot_pca("id")
+plot_pca("donor")
+plot_pca("day")
+plot_pca("twin_type")
+plot_pca("twin")
+plot_pca("batch")
+```
+
+Pair plots.
+
+```{r fig.height=9,fig.width=9}
+#df = data.frame(df_samples_subset,df_info)
+#ggscatmat(df, columns = 1:ncol(df_samples_subset), color = response,alpha = 0.5)
+#ggscatmat(df, columns = 1:ncol(df_samples_subset), color = 'donor',alpha = 0.5)
+```
+
+## Session Info
+
+```{r session_info}
+sessionInfo()
+```
