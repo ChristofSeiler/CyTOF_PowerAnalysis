@@ -120,11 +120,13 @@ for(i in 1:length(markers$isotope)) {
 Subsample to 5000 cells per donor.
 
 ```{r}
+set.seed(27261)
 subsample_ids = lapply(levels(df_samples$donor),function(donor_id) {
   all_ids = which(df_samples$donor == donor_id)
   sample(x = all_ids,size = 5000)
 }) %>% unlist
 df_samples = df_samples[subsample_ids,]
+table(df_samples$donor)
 ```
 
 Visualize all proteins for one donor.
