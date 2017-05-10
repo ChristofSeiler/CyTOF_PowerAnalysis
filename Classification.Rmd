@@ -98,7 +98,7 @@ ggplot(data=df_cell_count, aes(x=donor, y=cell_count)) +
 Remove samples with less than 2500 cells.
 
 ```{r}
-keepers = df_cell_count$donor[which(df_cell_count$cell_count > 2500)]
+keepers = df_cell_count$donor[which(df_cell_count$cell_count > 4999)]
 length(keepers)
 df_samples = subset(df_samples,donor %in% keepers) %>% droplevels
 table(df_samples$donor)
@@ -115,6 +115,16 @@ for(i in 1:length(markers$isotope)) {
                       pattern = as.character(isotope_name)) %>% which
   names(df_samples)[col_id] = markers$protein_name[i]
 }
+```
+
+Subsample to 5000 cells per donor.
+
+```{r}
+subsample_ids = lapply(levels(df_samples$donor),function(donor_id) {
+  all_ids = which(df_samples$donor == donor_id)
+  sample(x = all_ids,size = 5000)
+}) %>% unlist
+df_samples = df_samples[subsample_ids,]
 ```
 
 Visualize all proteins for one donor.
