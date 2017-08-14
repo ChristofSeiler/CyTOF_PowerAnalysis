@@ -1,0 +1,78 @@
+---
+title: "Power Analysis for Elena's K Proposal"
+output: html_document
+author: Christof Seiler
+date: August, 2017
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Packages
+
+Install packages.
+
+```{r warning=FALSE, message=FALSE}
+pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr","stringr","devtools",
+                "parallel")
+letsinstall = setdiff(pkgs_needed, installed.packages()) 
+if (length(letsinstall) > 0) {
+  source("http://bioconductor.org/biocLite.R")
+  biocLite(letsinstall)
+}
+```
+
+Load packages.
+
+```{r load_packages}
+library("ggplot2")
+library("reshape2")
+library("tibble")
+library("dplyr")
+library("magrittr")
+library("stringr")
+library("devtools")
+library("parallel")
+```
+
+## Power Simulations
+
+* Total number of makers: 36
+* Activating markers: 10 to 15
+* Number of NK cells: 5,000 to 10,000
+* Fold change: 1.5 (e.g. the mean intensity count is 100 in condition A and 150 in condition B/A=1.5)
+
+### Study 1 (Aim 1)
+
+* 3 conditions: 
+    * longterm nonprogressors (n=18)
+    * typical progressors (n=61)
+    * treated patients (n=24)
+* 3 to 4 timepoints per patient
+
+```{r study_1}
+```
+
+### Study 2 (Aim 2)
+
+* 2 conditions:
+    * before treatment (n=24)
+    * after treatment (n=24)
+
+```{r study_2}
+```
+
+### Study 3 (Aim 2)
+
+* 50 patients, on treatment
+* 3 timepoints per patient
+
+```{r study_3}
+```
+
+## Session Info
+
+```{r session_info}
+session_info()
+```
