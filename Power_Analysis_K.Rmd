@@ -15,7 +15,7 @@ Install packages.
 
 ```{r warning=FALSE, message=FALSE}
 pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr","stringr","devtools","readr",
-                "parallel","flowCore")
+                "parallel","flowCore","MASS")
 letsinstall = setdiff(pkgs_needed, installed.packages()) 
 if (length(letsinstall) > 0) {
   source("http://bioconductor.org/biocLite.R")
@@ -36,14 +36,23 @@ library("readr")
 library("devtools")
 library("parallel")
 library("flowCore")
+library("MASS")
+library("cowplot")
+theme_set(theme_gray())
 ```
 
-## Power Simulations
+## Simulation Parameters
 
 * Total number of makers: 36
-* Activating markers: 10 to 15
+* Differential markers: 5 to 10
 * Number of NK cells: 5,000 to 10,000
 * Fold change: 1.5 (e.g. the mean intensity count is 100 in condition A and 150 in condition B/A=1.5)
+* Sample sizes:
+    * Study 1: 3 groups (n1=18,n2=61,n3=24)
+    * Study 2: 2 groups (n1=24,n1=24)
+    * Study 3: 2 groups (n1=25,n2=25)
+
+## Data from Previous Study
 
 Marker information.
 
@@ -54,9 +63,12 @@ markers = read_csv(markers_file_name,col_types = cols(isotope = col_character(),
                                                       type = col_factor(c("extracellular","intracellular"))))
 ```
 
+Transform with `asinh` with standard scale parameter `b = 5`.
+
 ```{r load_sample}
 b = 5
 fcsB = read.FCS("D309T_NK_00_normalized_NK RAINBOW_12-Dec-2016.fcs",transformation = FALSE)
+exprs_raw = as.tibble(fcsB@exprs[,markers$isotope])
 exprs = as_tibble(asinh(fcsB@exprs[,markers$isotope]/b))
 ```
 
@@ -66,12 +78,25 @@ Change marker name from isotope name to protein name and remove markers that are
 new_col_names = markers$protein_name
 names(new_col_names) = markers$isotope
 exprs = plyr::rename(exprs, new_col_names)
+exprs_raw = plyr::rename(exprs_raw, new_col_names)
 str(exprs)
+str(exprs_raw)
+```
+
+Plot raw expressions.
+
+```{r plot_markers_raw, fig.width=10, fig.height=7}
+exprs_raw_long = melt(exprs_raw)
+exprs_raw_long %<>% dplyr::filter(value < 100)
+ggplot(exprs_raw_long,aes(x = value,y = ..scaled..)) +
+      geom_density() +
+      facet_wrap(~ variable,ncol = 8) +
+      xlab("raw counts")
 ```
 
 Plot transformed expressions.
 
-```{r plot_markers}
+```{r plot_markers_transformed, fig.width=10, fig.height=7}
 exprs_long = melt(exprs)
 ggplot(exprs_long,aes(x = value,y = ..scaled..)) +
       geom_density() +
@@ -79,32 +104,73 @@ ggplot(exprs_long,aes(x = value,y = ..scaled..)) +
       xlab("arcsinh transformed counts")
 ```
 
-### Study 1 (Aim 1)
+Plot transformed expressions without zeros.
 
-* 3 conditions: 
-    * longterm nonprogressors (n=18)
-    * typical progressors (n=61)
-    * treated patients (n=24)
-* 3 to 4 timepoints per patient
-
-```{r study_1}
+```{r plot_markers_no_zeros, fig.width=10, fig.height=7}
+sapply(names(exprs),function(marker_name) mean(exprs[,marker_name]==0))
+exprs_long = melt(exprs)
+exprs_long %<>% dplyr::filter(value > 0)
+ggplot(exprs_long,aes(x = value)) +
+  geom_histogram() +
+  facet_wrap(~ variable,ncol = 8) +
+  xlab("arcsinh transformed counts")
 ```
 
-### Study 2 (Aim 2)
+Fit a normal to non-zero transformed counts.
 
-* 2 conditions:
-    * before treatment (n=24)
-    * after treatment (n=24)
-
-```{r study_2}
+```{r normal_fit, fig.width=10, fig.height=7}
+fit_list = lapply(names(exprs),function(marker_name) {
+  xmin = 0
+  xmax = max(exprs)
+  exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
+  fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "normal")
+  ggplot(exprs_selection,aes_string(marker_name)) + 
+    geom_histogram(aes(y = ..density..),bins = 50) + 
+    stat_function(fun = dnorm, colour = "red",
+                  args = list(mean = fit$estimate[1], 
+                             sd = fit$estimate[2]),
+                  size = 1) +
+    xlim(xmin,xmax) +
+    theme(axis.title.y = element_blank())
+})
+plot_grid(plotlist = fit_list,ncol = 8)
 ```
 
-### Study 3 (Aim 2)
+Fit a normal to non-zero transformed counts.
 
-* 50 patients, on treatment
-* 3 timepoints per patient
+```{r exp_fit, fig.width=10, fig.height=7}
+fit_list = lapply(names(exprs),function(marker_name) {
+  xmin = 0
+  xmax = max(exprs)
+  exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
+  fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "exponential")
+  ggplot(exprs_selection,aes_string(marker_name)) + 
+    geom_histogram(aes(y = ..density..),bins = 50) + 
+    stat_function(fun = dexp, colour = "red",
+                  args = list(rate = fit$estimate[1]),
+                  size = 1) +
+    xlim(xmin,xmax) +
+    theme(axis.title.y = element_blank())
+})
+plot_grid(plotlist = fit_list,ncol = 8)
+```
 
-```{r study_3}
+## Model Fit
+
+Three components mixture model: 
+
+* zero's (nothing recorded)
+* exponential (inactive)
+* normal (acitive)
+
+```{r model_fit}
+# TODO
+```
+
+## Simulations
+
+```{r simulations}
+# TODO
 ```
 
 ## Session Info
