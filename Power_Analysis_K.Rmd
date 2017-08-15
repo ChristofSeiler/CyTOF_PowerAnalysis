@@ -14,8 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 Install packages.
 
 ```{r warning=FALSE, message=FALSE}
-pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr","stringr","devtools",
-                "parallel")
+pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr","stringr","devtools","readr",
+                "parallel","flowCore")
 letsinstall = setdiff(pkgs_needed, installed.packages()) 
 if (length(letsinstall) > 0) {
   source("http://bioconductor.org/biocLite.R")
@@ -32,8 +32,10 @@ library("tibble")
 library("dplyr")
 library("magrittr")
 library("stringr")
+library("readr")
 library("devtools")
 library("parallel")
+library("flowCore")
 ```
 
 ## Power Simulations
@@ -42,6 +44,40 @@ library("parallel")
 * Activating markers: 10 to 15
 * Number of NK cells: 5,000 to 10,000
 * Fold change: 1.5 (e.g. the mean intensity count is 100 in condition A and 150 in condition B/A=1.5)
+
+Marker information.
+
+```{r read_csv}
+markers_file_name = "markers.csv"
+markers = read_csv(markers_file_name,col_types = cols(isotope = col_character(),
+                                                      protein_name = col_character(),
+                                                      type = col_factor(c("extracellular","intracellular"))))
+```
+
+```{r load_sample}
+b = 5
+fcsB = read.FCS("D309T_NK_00_normalized_NK RAINBOW_12-Dec-2016.fcs",transformation = FALSE)
+exprs = as_tibble(asinh(fcsB@exprs[,markers$isotope]/b))
+```
+
+Change marker name from isotope name to protein name and remove markers that are unmapped.
+
+```{r map_protein_names}
+new_col_names = markers$protein_name
+names(new_col_names) = markers$isotope
+exprs = plyr::rename(exprs, new_col_names)
+str(exprs)
+```
+
+Plot transformed expressions.
+
+```{r plot_markers}
+exprs_long = melt(exprs)
+ggplot(exprs_long,aes(x = value,y = ..scaled..)) +
+      geom_density() +
+      facet_wrap(~ variable,ncol = 8) +
+      xlab("arcsinh transformed counts")
+```
 
 ### Study 1 (Aim 1)
 
