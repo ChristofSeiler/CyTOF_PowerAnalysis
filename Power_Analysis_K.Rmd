@@ -200,27 +200,33 @@ exp_fit = lapply(marker_exp,function(marker_name) {
 Make fake data.
 
 ```{r simulations}
-n_cells = 10000
-exprs_new = lapply(c(normal_fit,exp_fit),function(fit) {
-  nonzero = rbinom(n = n_cells,size = 1,prob = 1-fit$zero)
-  marker = rep(0,n_cells)
-  if(fit$marker_name %in% marker_normal) {
-    marker[which(nonzero==1)] = rtruncnorm(n = sum(nonzero), 
-                                           a = min(exprs), 
-                                           b = max(exprs), 
-                                           mean = fit$estimate["mean"], 
-                                           sd = fit$estimate["sd"])
-  } else {
-    marker[which(nonzero==1)] = rtrunc(n = sum(nonzero),
-                                       spec = "exp",
-                                       a = min(exprs), 
-                                       b = max(exprs),
-                                       rate = fit$estimate["rate"])
-  }
-  tb = tibble(marker)
-  names(tb) = fit$marker_name
-  tb
-}) %>% bind_cols
+make_data = function(n_cells = 10000,
+                     fold_change = 1.5,
+                     shifted_markers = "") {
+  lapply(c(normal_fit,exp_fit),function(fit) {
+    nonzero = rbinom(n = n_cells,size = 1,prob = 1-fit$zero)
+    marker = rep(0,n_cells)
+    if(fit$marker_name %in% marker_normal) {
+      mean_estimate = fit$estimate["mean"]
+      if(fit$marker_name %in% shifted_markers) mean_estimate = fold_change*mean_estimate
+      marker[which(nonzero==1)] = rtruncnorm(n = sum(nonzero), 
+                                             a = min(exprs), 
+                                             b = max(exprs), 
+                                             mean = mean_estimate,
+                                             sd = fit$estimate["sd"])
+    } else {
+      marker[which(nonzero==1)] = rtrunc(n = sum(nonzero),
+                                         spec = "exp",
+                                         a = min(exprs), 
+                                         b = max(exprs),
+                                         rate = fit$estimate["rate"])
+    }
+    tb = tibble(marker)
+    names(tb) = fit$marker_name
+    tb
+  }) %>% bind_cols
+}
+exprs_new = make_data(shifted_markers = c("CD38","CD2"))
 exprs_new_long = melt(exprs_new)
 ggplot(exprs_new_long,aes(x = value,y = ..scaled..)) +
       geom_density() +
