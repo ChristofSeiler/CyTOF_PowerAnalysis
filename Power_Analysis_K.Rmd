@@ -181,14 +181,16 @@ plot_grid(plotlist = fit_plots,ncol = 8)
 # recompute and save estimated parameters and add zero proportions
 normal_fit = lapply(marker_normal,function(marker_name) {
   exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
-  fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "exponential")
+  fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "normal")
   fit$zero = mean(exprs[,marker_name]==0)
+  fit$marker_name = marker_name
   fit
 })
 exp_fit = lapply(marker_exp,function(marker_name) {
   exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
-  fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "normal")
+  fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "exponential")
   fit$zero = mean(exprs[,marker_name]==0)
+  fit$marker_name = marker_name
   fit
 })
 ```
@@ -198,7 +200,32 @@ exp_fit = lapply(marker_exp,function(marker_name) {
 Make fake data.
 
 ```{r simulations}
-
+n_cells = 10000
+exprs_new = lapply(c(normal_fit,exp_fit),function(fit) {
+  nonzero = rbinom(n = n_cells,size = 1,prob = 1-fit$zero)
+  marker = rep(0,n_cells)
+  if(fit$marker_name %in% marker_normal) {
+    marker[which(nonzero==1)] = rtruncnorm(n = sum(nonzero), 
+                                           a = min(exprs), 
+                                           b = max(exprs), 
+                                           mean = fit$estimate["mean"], 
+                                           sd = fit$estimate["sd"])
+  } else {
+    marker[which(nonzero==1)] = rtrunc(n = sum(nonzero),
+                                       spec = "exp",
+                                       a = min(exprs), 
+                                       b = max(exprs),
+                                       rate = fit$estimate["rate"])
+  }
+  tb = tibble(marker)
+  names(tb) = fit$marker_name
+  tb
+}) %>% bind_cols
+exprs_new_long = melt(exprs_new)
+ggplot(exprs_new_long,aes(x = value,y = ..scaled..)) +
+      geom_density() +
+      facet_wrap(~ variable,ncol = 8) +
+      xlab("arcsinh transformed counts")
 ```
 
 ## Session Info
