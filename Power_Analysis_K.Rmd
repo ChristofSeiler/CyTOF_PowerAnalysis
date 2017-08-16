@@ -107,7 +107,6 @@ ggplot(exprs_long,aes(x = value,y = ..scaled..)) +
 Plot transformed expressions without zeros.
 
 ```{r plot_markers_no_zeros, fig.width=10, fig.height=7}
-sapply(names(exprs),function(marker_name) mean(exprs[,marker_name]==0))
 exprs_long = melt(exprs)
 exprs_long %<>% dplyr::filter(value > 0)
 ggplot(exprs_long,aes(x = value)) +
@@ -119,7 +118,7 @@ ggplot(exprs_long,aes(x = value)) +
 Fit a normal to non-zero transformed counts.
 
 ```{r normal_fit, fig.width=10, fig.height=7}
-fit_list = lapply(names(exprs),function(marker_name) {
+normal_fit_plots = lapply(names(exprs),function(marker_name) {
   xmin = 0
   xmax = max(exprs)
   exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
@@ -133,13 +132,13 @@ fit_list = lapply(names(exprs),function(marker_name) {
     xlim(xmin,xmax) +
     theme(axis.title.y = element_blank())
 })
-plot_grid(plotlist = fit_list,ncol = 8)
+plot_grid(plotlist = normal_fit_plots,ncol = 8)
 ```
 
 Fit a normal to non-zero transformed counts.
 
 ```{r exp_fit, fig.width=10, fig.height=7}
-fit_list = lapply(names(exprs),function(marker_name) {
+exp_fit_plots = lapply(names(exprs),function(marker_name) {
   xmin = 0
   xmax = max(exprs)
   exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
@@ -152,25 +151,54 @@ fit_list = lapply(names(exprs),function(marker_name) {
     xlim(xmin,xmax) +
     theme(axis.title.y = element_blank())
 })
-plot_grid(plotlist = fit_list,ncol = 8)
+plot_grid(plotlist = exp_fit_plots,ncol = 8)
 ```
 
 ## Model Fit
 
-Three components mixture model: 
+Classify markers into two types: 
 
-* zero's (nothing recorded)
-* exponential (inactive)
-* normal (acitive)
+* `inactive`: modeled with a exponential distribuion
+* `active`: modeled with a normal distribution
+
+In both cases we inflate the distribution with zeros according to the observed frequency from the example sample.
 
 ```{r model_fit}
-# TODO
+marker_normal = c("CD38","CD2","NKG2D","TIGIT","X_2B4",
+                  "DNAM_1","FAS_L","CD94","NTB_A","CD56","CD16")
+marker_exp = c("CD57","HLA_DR","CD69","LILRB1","CD8","CD62L",
+               "KIR2DS4","KIR2DS2","NKp46","NKp30","Siglec_7",
+               "NKG2C","NKp44","TACTILE","KIR2DL1","CXCR6",
+               "PD1","KIR2DL5","NKG2A","KIR3DL1","KIR2DL3",
+               "FcRg","Syk","Ki_67","Perforin")
+# sanity checks
+assert_that( unique(c(marker_normal,marker_exp)) %>% length == length(names(exprs)) )
+assert_that( intersect(marker_normal,marker_exp) %>% length == 0 )
+# plot rearranged
+fit_plots = c( normal_fit_plots[sapply(marker_normal,function(marker_name) which(names(exprs) == marker_name))],
+          exp_fit_plots[sapply(marker_exp,function(marker_name) which(names(exprs) == marker_name))] )
+plot_grid(plotlist = fit_plots,ncol = 8)
+# recompute and save estimated parameters and add zero proportions
+normal_fit = lapply(marker_normal,function(marker_name) {
+  exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
+  fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "exponential")
+  fit$zero = mean(exprs[,marker_name]==0)
+  fit
+})
+exp_fit = lapply(marker_exp,function(marker_name) {
+  exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
+  fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "normal")
+  fit$zero = mean(exprs[,marker_name]==0)
+  fit
+})
 ```
 
 ## Simulations
 
+Make fake data.
+
 ```{r simulations}
-# TODO
+
 ```
 
 ## Session Info
