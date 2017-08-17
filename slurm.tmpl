@@ -19,4 +19,5 @@
 
 ## Run R: we merge R output with stdout from SLURM, which gets then
 ## logged via --output option
+module load R/3.3.0
 R CMD BATCH --no-save --no-restore "<%= rscript %>" /dev/stdout

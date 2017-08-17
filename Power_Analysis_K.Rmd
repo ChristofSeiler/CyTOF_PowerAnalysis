@@ -317,20 +317,20 @@ set.seed(0xdada)
 n_donors_seq = c(rep(5,10))
 #n_donors_seq = c(rep(5,10),rep(10,10),rep(15,10),rep(20,10),rep(25,10))
 # use BatchJobs package:
-param = BatchJobsParam(workers = length(n_donors_seq),
-                       tasks = length(n_donors_seq),
-                       resources = list(ntasks=1,ncpus=1,mem=4000,walltime=10),
-                       cluster.functions = makeClusterFunctionsSLURM("slurm.tmpl"),
-                       log = TRUE,
-                       logdir = ".",
-                       progressbar = TRUE)
-# use parallel package:
-#n_cores = 2
-#param = MulticoreParam(workers = n_cores,
+#param = BatchJobsParam(workers = length(n_donors_seq),
 #                       tasks = length(n_donors_seq),
+#                       resources = list(ntasks=1,ncpus=1,mem=4000,walltime=10),
+#                       cluster.functions = makeClusterFunctionsSLURM("slurm.tmpl"),
 #                       log = TRUE,
 #                       logdir = ".",
 #                       progressbar = TRUE)
+# use parallel package:
+n_cores = 2
+param = MulticoreParam(workers = n_cores,
+                       tasks = length(n_donors_seq),
+                       log = TRUE,
+                       logdir = ".",
+                       progressbar = TRUE)
 experiments = bplapply(n_donors_seq, 
                        simulation_study, 
                        BPPARAM = param) %>% bind_rows
