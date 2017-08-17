@@ -261,8 +261,9 @@ simulate_two_groups = function(n_donors,shifted_markers = "") {
 Simulate just one dataset for testing purposes.
 
 ```{r one_simulation, fig.width=10, fig.height=7}
+n_donors = 25
 shifted_markers = c("CD38","CD2","NKG2D","TIGIT","X_2B4")
-exprs_groups = simulate_two_groups(n_donors = 25,shifted_markers = shifted_markers)
+exprs_groups = simulate_two_groups(n_donors = n_donors,shifted_markers = shifted_markers)
 with(exprs_groups,table(donor,treatment))
 exprs_groups_long = melt(exprs_groups,id.vars = c("donor","treatment"))
 ggplot(exprs_groups_long,aes(x = value,y = ..scaled..,shape = donor,color = treatment)) +
@@ -313,17 +314,18 @@ simulation_study = function(n_donors) {
 }
 set.seed(0xdada)
 n_donors_seq = c(rep(5,10),rep(10,10),rep(15,10),rep(20,10),rep(25,10))
-if(file.exists("simulation_study_log")) unlink("simulation_study_log", recursive=TRUE)
-reg = makeRegistry(id = "simulation_study_log", file.dir = "simulation_study_log")
-batchMap(reg, simulation_study, n_donors_seq)
-submitJobs(reg)
-waitForJobs(reg,sleep = 360)
-res_list = reduceResultsList(reg)
-experiments = res_list %>% bind_rows
-# or use package parallel
-#experiments = mclapply(c(rep(25,10),rep(5,10),rep(15,10),rep(20,10),rep(25,10)),
-#                       simulation_study,
-#                       mc.cores = 8) %>% bind_rows
+# use BatchJobs package:
+#if(file.exists("simulation_study_log")) unlink("simulation_study_log", recursive=TRUE)
+#reg = makeRegistry(id = "simulation_study_log", file.dir = "simulation_study_log")
+#batchMap(reg, simulation_study, n_donors_seq)
+#submitJobs(reg)
+#waitForJobs(reg,sleep = 360)
+#res_list = reduceResultsList(reg)
+#experiments = res_list %>% bind_rows
+# use parallel package:
+experiments = mclapply(n_donors_seq,
+                       simulation_study,
+                       mc.cores = 8) %>% bind_rows
 write_csv(experiments,path = "experiments.csv")
 experiments %>% 
   dplyr::group_by(n_donors,target_FDR) %>% 
