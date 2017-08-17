@@ -15,7 +15,7 @@ Install packages.
 
 ```{r warning=FALSE, message=FALSE}
 pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr","stringr","devtools","readr","assertthat",
-                "parallel","flowCore","MASS","cowplot","truncnorm","truncdist","ChristofSeiler/BatchJobs")
+                "parallel","flowCore","MASS","cowplot","truncnorm","truncdist","BiocParallel","BatchJobs")
 letsinstall = setdiff(pkgs_needed, installed.packages()) 
 if (length(letsinstall) > 0) {
   source("http://bioconductor.org/biocLite.R")
@@ -42,6 +42,7 @@ library("MASS")
 library("cowplot")
 library("truncnorm")
 library("truncdist")
+library("BiocParallel")
 library("BatchJobs")
 theme_set(theme_gray())
 ```
@@ -296,7 +297,6 @@ Run full simulation study.
 
 ```{r simulation_study}
 simulation_study = function(n_donors) {
-  cat(n_donors)
   target_FDR = 0.01
   shifted_markers = c("CD38","CD2","NKG2D","TIGIT","X_2B4")
   exprs_groups = simulate_two_groups(n_donors = n_donors,
@@ -313,19 +313,26 @@ simulation_study = function(n_donors) {
          FDR = compute_FDR(shifted_markers,discoverd_markers))
 }
 set.seed(0xdada)
-n_donors_seq = c(rep(5,10),rep(10,10),rep(15,10),rep(20,10),rep(25,10))
+n_donors_seq = c(rep(5,10))
+n_cores = 2
+#n_donors_seq = c(rep(5,10),rep(10,10),rep(15,10),rep(20,10),rep(25,10))
 # use BatchJobs package:
-#if(file.exists("simulation_study_log")) unlink("simulation_study_log", recursive=TRUE)
-#reg = makeRegistry(id = "simulation_study_log", file.dir = "simulation_study_log")
-#batchMap(reg, simulation_study, n_donors_seq)
-#submitJobs(reg)
-#waitForJobs(reg,sleep = 360)
-#res_list = reduceResultsList(reg)
-#experiments = res_list %>% bind_rows
+#param = BatchJobsParam(workers = n_cores,
+#                       tasks = length(n_donors_seq),
+#                       resources = list(ntasks=1,ncpus=1,mem=8000,walltime=20),
+#                       cluster.functions = makeClusterFunctionsSLURM("slurm.tmpl"),
+#                       log = TRUE,
+#                       logdir = ".",
+#                       progressbar=TRUE)
 # use parallel package:
-experiments = mclapply(n_donors_seq,
-                       simulation_study,
-                       mc.cores = 8) %>% bind_rows
+param = MulticoreParam(workers = n_cores,
+                       tasks = length(n_donors_seq),
+                       log = TRUE,
+                       logdir = ".",
+                       progressbar=TRUE)
+experiments = bplapply(n_donors_seq, 
+                       simulation_study, 
+                       BPPARAM = param) %>% bind_rows
 write_csv(experiments,path = "experiments.csv")
 experiments %>% 
   dplyr::group_by(n_donors,target_FDR) %>% 

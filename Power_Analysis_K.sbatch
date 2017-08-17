@@ -2,9 +2,9 @@
 
 #SBATCH --job-name=Power_Analysis
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=8
+#SBATCH --ntasks-per-node=2
 #SBATCH --mem-per-cpu=8GB
-#SBATCH --time=08:00:00
+#SBATCH --time=01:00:00
 #SBATCH --partition=normal
 
 # uncomment for cluster
