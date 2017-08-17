@@ -8,7 +8,7 @@
 #SBATCH --partition=normal
 
 # uncomment for cluster
-module load R/3.3.0
+module load R
 
-#R -e "devtools::install_github('ChristofSeiler/CytoGLMM',auth_tok='efe6c658c1a26e7f6ae60a7dbd84c8bbbf95f24b')"
+#R -e "devtools::install_github('ChristofSeiler/CytoGLMM',auth_tok='a0309c095c847c0b2b053adadcd8b386a87bb1de')"
 R -e "rmarkdown::render('Power_Analysis_K.Rmd')"
