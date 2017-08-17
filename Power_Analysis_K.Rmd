@@ -306,7 +306,7 @@ simulation_study = function(n_donors) {
                 response = "treatment",
                 random_var = "donor",
                 cores = 1)
-  futile.logger::flog.info(fit)
+  #futile.logger::flog.info(fit)
   discoverd_markers = pvalues(fit) %>% as.tibble %>% dplyr::filter(pvalues_adj < target_FDR) %>% .$protein_names
   tibble(n_donors = n_donors,
          target_FDR = target_FDR,
