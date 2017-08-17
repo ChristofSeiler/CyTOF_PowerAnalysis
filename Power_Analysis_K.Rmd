@@ -323,7 +323,7 @@ param = BatchJobsParam(workers = length(n_donors_seq),
                        cluster.functions = makeClusterFunctionsSLURM("slurm.tmpl"),
                        log = TRUE,
                        logdir = ".",
-                       progressbar=TRUE)
+                       progressbar = TRUE)
 # use parallel package:
 #n_cores = 2
 #param = MulticoreParam(workers = n_cores,
