@@ -260,7 +260,7 @@ simulate_two_groups = function(n_donors,shifted_markers = "") {
 
 Simulate just one dataset for testing purposes.
 
-```{r one_simulation, fig.width=10, fig.height=7}}
+```{r one_simulation, fig.width=10, fig.height=7}
 shifted_markers = c("CD38","CD2","NKG2D","TIGIT","X_2B4")
 exprs_groups = simulate_two_groups(n_donors = 25,shifted_markers = shifted_markers)
 with(exprs_groups,table(donor,treatment))
