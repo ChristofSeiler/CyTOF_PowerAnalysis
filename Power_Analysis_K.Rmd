@@ -206,7 +206,7 @@ Make fake data.
 ```{r make_data}
 make_data = function(n_cells = 10000,
                      fold_change = 1.5,
-                     coeff_var = 0.1,
+                     coeff_var = 0.3,
                      shifted_markers = "") {
   lapply(c(normal_fit,exp_fit),function(fit) {
     nonzero = rbinom(n = n_cells,size = 1,prob = 1-fit$zero)
@@ -238,21 +238,15 @@ make_data = function(n_cells = 10000,
     tb
   }) %>% bind_cols
 }
-exprs_new = make_data(shifted_markers = c("CD38","CD2"))
-exprs_new_long = melt(exprs_new)
-ggplot(exprs_new_long,aes(x = value,y = ..scaled..)) +
-  geom_density() +
-  facet_wrap(~ variable,ncol = 8) +
-  xlab("arcsinh transformed counts")
 ```
 
 Simulate data for two group comparisons.
 
-```{r simulate_groups}
-simulate_two_groups = function(n_donors) {
+```{r simulate_two_groups}
+simulate_two_groups = function(n_donors,shifted_markers = "") {
   exprs_group1 = lapply(seq(n_donors),function(i) make_data() %>% 
                           add_column(donor = i)) %>% bind_rows
-  exprs_group2 = lapply(seq(n_donors),function(i) make_data(shifted_markers = c("CD38")) %>% 
+  exprs_group2 = lapply(seq(n_donors),function(i) make_data(shifted_markers = shifted_markers) %>% 
                           add_column(donor = i)) %>% bind_rows
   exprs_group1 %<>% add_column(treatment = "A")
   exprs_group2 %<>% add_column(treatment = "B")
@@ -261,26 +255,76 @@ simulate_two_groups = function(n_donors) {
   exprs_groups$donor %<>% factor
   exprs_groups
 }
-exprs_groups = simulate_two_groups(n_donors = 10)
-with(exprs_groups,table(donor,treatment))
-exprs_groups_long = melt(exprs_groups,id.vars = c("donor","treatment"))
-ggplot(exprs_groups_long,aes(x = value,y = ..scaled..,color = donor,linetype = treatment)) +
-  geom_density() +
-  facet_wrap(~ variable,ncol = 8) +
-  xlab("arcsinh transformed counts")
 ```
 
-Fit glmm.
+Simulate just one dataset for testing purposes.
+
+```{r one_simulation, fig.width=10, fig.height=7}}
+shifted_markers = c("CD38","CD2","NKG2D","TIGIT","X_2B4")
+exprs_groups = simulate_two_groups(n_donors = 25,shifted_markers = shifted_markers)
+with(exprs_groups,table(donor,treatment))
+exprs_groups_long = melt(exprs_groups,id.vars = c("donor","treatment"))
+ggplot(exprs_groups_long,aes(x = value,y = ..scaled..,shape = donor,color = treatment)) +
+  geom_density() +
+  facet_wrap(~ variable,ncol = 8) +
+  xlab("arcsinh transformed counts") + 
+  ggtitle(paste0("n_donors = ",n_donors))
+```
+
+Fit just one GLMM for testing purposes.
 
 ```{r fit_glmm}
 fit = glmm_ml(df_samples = exprs_groups,
               protein_names = names(exprs),
               response = "treatment",
               random_var = "donor",
-              cores = 1)
+              cores = 8)
 plot(fit)
-alpha = 0.01
-pvalues(fit) %>% as.tibble %>% dplyr::filter(pvalues_adj < alpha)
+target_FDR = 0.01
+discoverd_markers = pvalues(fit) %>% as.tibble %>% dplyr::filter(pvalues_adj < target_FDR) %>% .$protein_names
+compute_TPR = function(shifted_markers,discoverd_markers) 
+  sum(discoverd_markers %in% shifted_markers)/length(shifted_markers)
+compute_TPR(shifted_markers,discoverd_markers)
+compute_FDR = function(shifted_markers,discoverd_markers) 
+  sum(!discoverd_markers %in% shifted_markers)/length(discoverd_markers)
+compute_FDR(shifted_markers,discoverd_markers)
+```
+
+Run full simulation study.
+
+```{r simulation_study}
+simulation_study = function(n_donors) {
+  cat(n_donors)
+  target_FDR = 0.01
+  shifted_markers = c("CD38","CD2","NKG2D","TIGIT","X_2B4")
+  exprs_groups = simulate_two_groups(n_donors = n_donors,
+                                     shifted_markers = shifted_markers)
+  fit = glmm_ml(df_samples = exprs_groups,
+                protein_names = names(exprs),
+                response = "treatment",
+                random_var = "donor",
+                cores = 8)
+  discoverd_markers = pvalues(fit) %>% as.tibble %>% dplyr::filter(pvalues_adj < target_FDR) %>% .$protein_names
+  tibble(n_donors = n_donors,
+         target_FDR = target_FDR,
+         TPR = compute_TPR(shifted_markers,discoverd_markers),
+         FDR = compute_FDR(shifted_markers,discoverd_markers))
+}
+set.seed(0xdada)
+#batchMap(reg, fun, num_latent_classes_seq)
+#submitJobs(reg)
+#waitForJobs(reg,sleep = 360)
+#res_list = reduceResultsList(reg)
+#experiments = mclapply(c(rep(5,10)),#rep(10,10),rep(15,10),rep(20,10),rep(25,10)),
+#                       simulation_study,
+#                       mc.cores = 8) %>% bind_rows
+experiments = lapply(c(rep(25,10)),#rep(5,10),rep(15,10),rep(20,10),rep(25,10)),
+                     simulation_study) %>% bind_rows
+write_csv(experiments,path = "experiments.csv")
+experiments %>% 
+  dplyr::group_by(n_donors,target_FDR) %>% 
+  dplyr::summarize(TPR = mean(TPR),
+                   FDR = mean(FDR))
 ```
 
 ## Session Info
