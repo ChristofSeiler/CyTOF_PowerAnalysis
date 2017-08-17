@@ -15,7 +15,7 @@ Install packages.
 
 ```{r warning=FALSE, message=FALSE}
 pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr","stringr","devtools","readr","assertthat",
-                "parallel","flowCore","MASS","cowplot","truncnorm","truncdist")
+                "parallel","flowCore","MASS","cowplot","truncnorm","truncdist","ChristofSeiler/BatchJobs")
 letsinstall = setdiff(pkgs_needed, installed.packages()) 
 if (length(letsinstall) > 0) {
   source("http://bioconductor.org/biocLite.R")
@@ -42,6 +42,7 @@ library("MASS")
 library("cowplot")
 library("truncnorm")
 library("truncdist")
+library("BatchJobs")
 theme_set(theme_gray())
 ```
 
@@ -278,7 +279,7 @@ fit = glmm_ml(df_samples = exprs_groups,
               protein_names = names(exprs),
               response = "treatment",
               random_var = "donor",
-              cores = 8)
+              cores = 1)
 plot(fit)
 target_FDR = 0.01
 discoverd_markers = pvalues(fit) %>% as.tibble %>% dplyr::filter(pvalues_adj < target_FDR) %>% .$protein_names
@@ -303,7 +304,7 @@ simulation_study = function(n_donors) {
                 protein_names = names(exprs),
                 response = "treatment",
                 random_var = "donor",
-                cores = 8)
+                cores = 1)
   discoverd_markers = pvalues(fit) %>% as.tibble %>% dplyr::filter(pvalues_adj < target_FDR) %>% .$protein_names
   tibble(n_donors = n_donors,
          target_FDR = target_FDR,
@@ -311,15 +312,18 @@ simulation_study = function(n_donors) {
          FDR = compute_FDR(shifted_markers,discoverd_markers))
 }
 set.seed(0xdada)
-#batchMap(reg, fun, num_latent_classes_seq)
-#submitJobs(reg)
-#waitForJobs(reg,sleep = 360)
-#res_list = reduceResultsList(reg)
-#experiments = mclapply(c(rep(5,10)),#rep(10,10),rep(15,10),rep(20,10),rep(25,10)),
+n_donors_seq = c(rep(5,10),rep(10,10),rep(15,10),rep(20,10),rep(25,10))
+if(file.exists("simulation_study_log")) unlink("simulation_study_log", recursive=TRUE)
+reg = makeRegistry(id = "simulation_study_log", file.dir = "simulation_study_log")
+batchMap(reg, simulation_study, n_donors_seq)
+submitJobs(reg)
+waitForJobs(reg,sleep = 360)
+res_list = reduceResultsList(reg)
+experiments = res_list %>% bind_rows
+# or use package parallel
+#experiments = mclapply(c(rep(25,10),rep(5,10),rep(15,10),rep(20,10),rep(25,10)),
 #                       simulation_study,
 #                       mc.cores = 8) %>% bind_rows
-experiments = lapply(c(rep(25,10)),#rep(5,10),rep(15,10),rep(20,10),rep(25,10)),
-                     simulation_study) %>% bind_rows
 write_csv(experiments,path = "experiments.csv")
 experiments %>% 
   dplyr::group_by(n_donors,target_FDR) %>% 
