@@ -14,8 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 Install packages.
 
 ```{r warning=FALSE, message=FALSE}
-pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr","stringr","devtools","readr",
-                "parallel","flowCore","MASS")
+pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr","stringr","devtools","readr","assertthat",
+                "parallel","flowCore","MASS","cowplot","truncnorm","truncdist")
 letsinstall = setdiff(pkgs_needed, installed.packages()) 
 if (length(letsinstall) > 0) {
   source("http://bioconductor.org/biocLite.R")
@@ -26,6 +26,7 @@ if (length(letsinstall) > 0) {
 Load packages.
 
 ```{r load_packages}
+library("CytoGLMM")
 library("ggplot2")
 library("reshape2")
 library("tibble")
@@ -34,10 +35,13 @@ library("magrittr")
 library("stringr")
 library("readr")
 library("devtools")
+library("assertthat")
 library("parallel")
 library("flowCore")
 library("MASS")
 library("cowplot")
+library("truncnorm")
+library("truncdist")
 theme_set(theme_gray())
 ```
 
@@ -119,7 +123,7 @@ Fit a normal to non-zero transformed counts.
 
 ```{r normal_fit, fig.width=10, fig.height=7}
 normal_fit_plots = lapply(names(exprs),function(marker_name) {
-  xmin = 0
+  xmin = min(exprs)
   xmax = max(exprs)
   exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
   fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "normal")
@@ -139,7 +143,7 @@ Fit a normal to non-zero transformed counts.
 
 ```{r exp_fit, fig.width=10, fig.height=7}
 exp_fit_plots = lapply(names(exprs),function(marker_name) {
-  xmin = 0
+  xmin = min(exprs)
   xmax = max(exprs)
   exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
   fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "exponential")
@@ -180,14 +184,14 @@ fit_plots = c( normal_fit_plots[sapply(marker_normal,function(marker_name) which
 plot_grid(plotlist = fit_plots,ncol = 8)
 # recompute and save estimated parameters and add zero proportions
 normal_fit = lapply(marker_normal,function(marker_name) {
-  exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
+  exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > min(exprs))
   fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "normal")
   fit$zero = mean(exprs[,marker_name]==0)
   fit$marker_name = marker_name
   fit
 })
 exp_fit = lapply(marker_exp,function(marker_name) {
-  exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > xmin)
+  exprs_selection = exprs[,marker_name] %>% dplyr::filter(. > min(exprs))
   fit = fitdistr(x = pull(exprs_selection,marker_name),densfun = "exponential")
   fit$zero = mean(exprs[,marker_name]==0)
   fit$marker_name = marker_name
@@ -199,27 +203,35 @@ exp_fit = lapply(marker_exp,function(marker_name) {
 
 Make fake data.
 
-```{r simulations}
+```{r make_data}
 make_data = function(n_cells = 10000,
                      fold_change = 1.5,
+                     coeff_var = 0.1,
                      shifted_markers = "") {
   lapply(c(normal_fit,exp_fit),function(fit) {
     nonzero = rbinom(n = n_cells,size = 1,prob = 1-fit$zero)
     marker = rep(0,n_cells)
     if(fit$marker_name %in% marker_normal) {
       mean_estimate = fit$estimate["mean"]
-      if(fit$marker_name %in% shifted_markers) mean_estimate = fold_change*mean_estimate
+      stdev = coeff_var*mean_estimate
+      if(fit$marker_name %in% shifted_markers) {
+        mean_estimate = rnorm(1,fold_change*mean_estimate,stdev)
+      } else {
+        mean_estimate = rnorm(1,mean_estimate,stdev)
+      }
       marker[which(nonzero==1)] = rtruncnorm(n = sum(nonzero), 
                                              a = min(exprs), 
                                              b = max(exprs), 
                                              mean = mean_estimate,
                                              sd = fit$estimate["sd"])
     } else {
+      rate_empirical = sapply(exp_fit,function(fit) fit$estimate["rate"])
+      rate_estimate = runif(n = 1,min = min(rate_empirical),max = max(rate_empirical))
       marker[which(nonzero==1)] = rtrunc(n = sum(nonzero),
                                          spec = "exp",
                                          a = min(exprs), 
                                          b = max(exprs),
-                                         rate = fit$estimate["rate"])
+                                         rate = rate_estimate)
     }
     tb = tibble(marker)
     names(tb) = fit$marker_name
@@ -229,9 +241,46 @@ make_data = function(n_cells = 10000,
 exprs_new = make_data(shifted_markers = c("CD38","CD2"))
 exprs_new_long = melt(exprs_new)
 ggplot(exprs_new_long,aes(x = value,y = ..scaled..)) +
-      geom_density() +
-      facet_wrap(~ variable,ncol = 8) +
-      xlab("arcsinh transformed counts")
+  geom_density() +
+  facet_wrap(~ variable,ncol = 8) +
+  xlab("arcsinh transformed counts")
+```
+
+Simulate data for two group comparisons.
+
+```{r simulate_groups}
+simulate_two_groups = function(n_donors) {
+  exprs_group1 = lapply(seq(n_donors),function(i) make_data() %>% 
+                          add_column(donor = i)) %>% bind_rows
+  exprs_group2 = lapply(seq(n_donors),function(i) make_data(shifted_markers = c("CD38")) %>% 
+                          add_column(donor = i)) %>% bind_rows
+  exprs_group1 %<>% add_column(treatment = "A")
+  exprs_group2 %<>% add_column(treatment = "B")
+  exprs_groups = bind_rows(exprs_group1,exprs_group2)
+  exprs_groups$treatment %<>% factor
+  exprs_groups$donor %<>% factor
+  exprs_groups
+}
+exprs_groups = simulate_two_groups(n_donors = 10)
+with(exprs_groups,table(donor,treatment))
+exprs_groups_long = melt(exprs_groups,id.vars = c("donor","treatment"))
+ggplot(exprs_groups_long,aes(x = value,y = ..scaled..,color = donor,linetype = treatment)) +
+  geom_density() +
+  facet_wrap(~ variable,ncol = 8) +
+  xlab("arcsinh transformed counts")
+```
+
+Fit glmm.
+
+```{r fit_glmm}
+fit = glmm_ml(df_samples = exprs_groups,
+              protein_names = names(exprs),
+              response = "treatment",
+              random_var = "donor",
+              cores = 1)
+plot(fit)
+alpha = 0.01
+pvalues(fit) %>% as.tibble %>% dplyr::filter(pvalues_adj < alpha)
 ```
 
 ## Session Info
