@@ -329,7 +329,7 @@ parameter_grid = expand.grid(n_donors_seq,target_FDR_seq)
 # use parallel package:
 n_cores = 4
 param = MulticoreParam(workers = n_cores,
-                       tasks = length(n_donors_seq),
+                       tasks = nrow(parameter_grid),
                        log = TRUE,
                        logdir = ".",
                        progressbar = TRUE)
