@@ -344,13 +344,17 @@ experiments_summary = experiments %>%
   dplyr::group_by(n_donors,target_FDR) %>% 
   dplyr::summarize(FDR = mean(FDR),
                    TPR = mean(TPR))
-ggplot(melt(experiments_summary,id.vars = c("n_donors","target_FDR")),
+experiments_summary_long = melt(experiments_summary,id.vars = c("n_donors","target_FDR"))
+experiments_summary_long %<>% rename(statistic = "variable")
+experiments_summary_long$target_FDR %<>% factor
+ggplot(experiments_summary_long,
        aes(x = n_donors,
            y = value,
-           linetype = variable,
-           color = factor(target_FDR))) +
+           linetype = statistic,
+           color = target_FDR)) +
   geom_hline(yintercept = c(0.2,0.8),color = "black",alpha = 0.3) +
   geom_line() +
+  geom_point() +
   scale_y_continuous(limits= c(0,1),breaks = seq(0,1,0.1)) +
   ylab("rate")
 ```
