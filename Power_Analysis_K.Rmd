@@ -326,7 +326,7 @@ n_donors_seq = c(rep(5,10),rep(10,10),rep(15,10),rep(20,10),rep(25,10))
 #                       progressbar = TRUE,
 #                       ... = ...)
 # use parallel package:
-n_cores = 8
+n_cores = 16
 param = MulticoreParam(workers = n_cores,
                        tasks = length(n_donors_seq),
                        log = TRUE,
