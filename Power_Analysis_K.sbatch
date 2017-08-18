@@ -2,11 +2,11 @@
 
 #SBATCH --job-name=Power_Analysis
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=16
+#SBATCH --ntasks-per-node=4
 #SBATCH --mem-per-cpu=8GB
-#SBATCH --time=02:00:00
-#SBATCH --partition=bigmem
-#SBATCH --qos=bigmem
+#SBATCH --time=08:00:00
+#SBATCH --partition=normal
+##SBATCH --qos=bigmem
 
 # uncomment for cluster
 module load R/3.3.0
