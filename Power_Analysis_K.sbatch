@@ -2,8 +2,8 @@
 
 #SBATCH --job-name=Power_Analysis
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-#SBATCH --mem-per-cpu=8GB
+#SBATCH --ntasks-per-node=8
+#SBATCH --mem-per-cpu=4GB
 #SBATCH --time=08:00:00
 #SBATCH --partition=normal
 ##SBATCH --qos=bigmem

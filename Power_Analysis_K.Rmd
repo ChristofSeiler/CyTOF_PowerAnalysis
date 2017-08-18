@@ -208,7 +208,7 @@ Make fake data.
 ```{r make_data}
 make_data = function(n_cells = 10000,
                      fold_change = 1.5,
-                     coeff_var = 0.3,
+                     coeff_var = 0.4,
                      shifted_markers = "") {
   lapply(c(normal_fit,exp_fit),function(fit) {
     nonzero = rbinom(n = n_cells,size = 1,prob = 1-fit$zero)
@@ -283,7 +283,7 @@ fit = glmm_ml(df_samples = exprs_groups,
               random_var = "donor",
               cores = 1)
 plot(fit)
-target_FDR = 0.01
+target_FDR = 0.001
 discoverd_markers = pvalues(fit) %>% as.tibble %>% dplyr::filter(pvalues_adj < target_FDR) %>% .$protein_names
 compute_TPR = function(shifted_markers,discoverd_markers) 
   sum(discoverd_markers %in% shifted_markers)/length(shifted_markers)
@@ -311,9 +311,9 @@ simulation_study = function(n_donors,target_FDR) {
          TPR = compute_TPR(shifted_markers,discoverd_markers),
          FDR = compute_FDR(shifted_markers,discoverd_markers))
 }
-set.seed(0xdada)
 #n_donors_seq = c(rep(5,10))
-n_donors_seq = c(rep(5,10),rep(10,10),rep(15,10),rep(20,10),rep(25,10))
+n_rep = 20
+n_donors_seq = c(rep(5,n_rep),rep(10,n_rep),rep(15,n_rep),rep(20,n_rep),rep(25,n_rep))
 #target_FDR_seq = c(0.01,0.1)
 target_FDR_seq = c(0.001,0.01,0.05,0.1,0.2)
 parameter_grid = expand.grid(n_donors_seq,target_FDR_seq)
@@ -327,15 +327,12 @@ parameter_grid = expand.grid(n_donors_seq,target_FDR_seq)
 #                       progressbar = TRUE,
 #                       ... = ...)
 # use parallel package:
-n_cores = 4
+n_cores = 8
 param = MulticoreParam(workers = n_cores,
                        tasks = nrow(parameter_grid),
                        log = TRUE,
                        logdir = ".",
                        progressbar = TRUE)
-#experiments = bplapply(n_donors_seq,
-#                       simulation_study, 
-#                       BPPARAM = param) %>% bind_rows
 experiments = bpmapply(simulation_study,
                        parameter_grid$Var1,
                        parameter_grid$Var2,
@@ -343,10 +340,19 @@ experiments = bpmapply(simulation_study,
                        BPPARAM = param) %>% bind_rows
 experiments
 write_csv(experiments,path = "experiments.csv")
-experiments %>% 
+experiments_summary = experiments %>% 
   dplyr::group_by(n_donors,target_FDR) %>% 
-  dplyr::summarize(TPR = mean(TPR),
-                   FDR = mean(FDR))
+  dplyr::summarize(FDR = mean(FDR),
+                   TPR = mean(TPR))
+ggplot(melt(experiments_summary,id.vars = c("n_donors","target_FDR")),
+       aes(x = n_donors,
+           y = value,
+           linetype = variable,
+           color = factor(target_FDR))) +
+  geom_hline(yintercept = c(0.2,0.8),color = "black",alpha = 0.3) +
+  geom_line() +
+  scale_y_continuous(limits= c(0,1),breaks = seq(0,1,0.1)) +
+  ylab("rate")
 ```
 
 ## Session Info
