@@ -208,7 +208,7 @@ Make fake data.
 ```{r make_data}
 make_data = function(n_cells = 10000,
                      fold_change = 1.5,
-                     coeff_var = 0.4,
+                     coeff_var = 0.5,
                      shifted_markers = "") {
   lapply(c(normal_fit,exp_fit),function(fit) {
     nonzero = rbinom(n = n_cells,size = 1,prob = 1-fit$zero)
