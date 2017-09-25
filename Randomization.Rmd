@@ -72,3 +72,7 @@ expr_tb %<>% mutate(derandomized = ceiling(after))
 expr_tb %<>% mutate(diff_derandomized = derandomized - before)
 expr_tb %>% print(n = Inf)
 ```
+
+```{r session_info}
+session_info()
+```
