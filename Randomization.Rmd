@@ -1,0 +1,74 @@
+---
+title: "Randomization"
+output: html_document
+author: Christof Seiler
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Goal
+
+Reverse engineer how CyTOF converts integer counts into real numbers.
+
+## Prepare Packages
+
+Install packages.
+
+```{r warning=FALSE, message=FALSE}
+pkgs_needed = c("ggplot2","reshape2","tibble","dplyr","magrittr",
+                "devtools","flowCore")
+letsinstall = setdiff(pkgs_needed, installed.packages()) 
+if (length(letsinstall) > 0) {
+  source("http://bioconductor.org/biocLite.R")
+  biocLite(letsinstall)
+}
+```
+
+Load packages.
+
+```{r load_packages, warning=FALSE, message=FALSE}
+library("ggplot2")
+library("reshape2")
+library("tibble")
+library("dplyr")
+library("magrittr")
+library("devtools")
+library("flowCore")
+theme_set(theme_bw())
+```
+
+## Background
+
+After personal conversation with Mike, I think this is what is going on during randomization.
+
+1. If count is zero, no randomization
+2. If count is non-zero, draw number between 0 and 1 (excluding 0 and 1) and subtract it from its observed count
+
+So what we have to do is to round up all non-zero counts to the next higher integer. This will perfectly reconstruct the original values.
+
+## Try Derandomize Counts
+
+Load fcs files before and after randomization. It looks like only the first 25 cells are the same in before and after fcs files. Use `ceiling` to derandomize and check if it works.
+
+```{r load_fcs}
+before = "EV02_4a_1_00_norandom_cells_found.fcs"
+after = "EV02_4a_1_00.FCS"
+marker = "Cd111Di"
+fcs_before = read.FCS(before,transformation = FALSE)
+colnames(fcs_before)
+fcs_after = read.FCS(after,transformation = FALSE)
+colnames(fcs_after)
+exprs_before = fcs_before@exprs[,marker]
+length(exprs_before)
+exprs_after = fcs_after@exprs[,marker]
+length(exprs_after)
+expr_tb = tibble(before = head(exprs_before,n = 25),
+                 after = head(exprs_after,n = 25))
+expr_tb %<>% mutate(diff = after - before)
+expr_tb %<>% mutate(derandomized = ceiling(after))
+expr_tb %<>% mutate(diff_derandomized = derandomized - before)
+expr_tb %>% print(n = Inf)
+```

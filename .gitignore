@@ -8,3 +8,4 @@
 *.html
 
 experiments.csv
+.DS_Store
